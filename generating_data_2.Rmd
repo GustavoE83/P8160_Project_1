@@ -1,0 +1,200 @@
+---
+title: "Another attempt at generating data"
+author: "Gustavo Garcia-Franceschini"
+date: "`r Sys.Date()`"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse)
+library(nph)
+```
+
+# Treatment Assignment
+
+Here, I assign treatment, generate from uniform distribution and define parameters. Later parts of the project could explore different parameters.
+
+```{r}
+# 0 = control; 1 = treat
+treat = c(rep(0, 500), rep(1,500))
+
+#random U
+u = runif(1000)
+
+#treatment effect
+beta = -0.5
+
+#coefficients
+lambda = 2
+alpha = 3
+```
+
+# Proportional Data
+
+Here, we produce our data from the proportional assumption. Notice the only difference in the distributions of the two groups is the factor of 1/exp(beta).
+
+```{r}
+proportional = tibble(
+  
+  treat = treat,
+  
+  u = u,
+  
+  t = 1/(lambda^(1/alpha)) * (-log(1-u)/exp(beta*treat))^(1/alpha),
+  
+  event = T
+)
+
+```
+
+Here, we can see the log-rank test correctly rejects the Null (that the two groups come from the same distribution.)
+
+```{r}
+logrank.test(proportional$t, proportional$event, proportional$treat, 
+             rho = 0, gamma = 0 )
+```
+
+```{r}
+s = survival::survfit(survival::Surv(t, event) ~ treat, data = proportional)
+
+plot(s)
+```
+
+```{r}
+treat_f <- as.factor(c(rep("0", 500), rep("1", 500)))
+
+df <- data.frame(surv = s$surv, treat = treat_f, time = s$time)
+```
+
+```{r}
+ggplot(data = df, aes(x = time, y = surv)) + 
+    geom_point(aes(colour = treat)) + 
+    geom_line(aes(colour = treat)) +
+    theme_bw()
+```
+
+
+
+# Effect increases
+
+Here, both treatment groups are sampled from the same distribution, up until time t_0. If the individual is alive by time t, the treatment activates (if they were assigned treatment). Future research can look at different values of t_0.
+
+```{r}
+t_0 = 1.05
+
+increases = tibble(
+  
+  treat = treat,
+  
+  u = u,
+  
+  t = 1/(lambda^(1/alpha)) * (-log(1-u)/exp(beta*0))^(1/alpha), #force treat=0
+  
+  event = T
+)
+```
+
+```{r}
+increases = increases %>%
+  mutate(
+    t = case_when(
+      
+      t < t_0 ~ t,
+      
+      t >= t_0 ~ 1/(lambda^(1/alpha)) * (-log(1-u)/exp(beta*treat))^(1/alpha)
+      
+    )
+  )
+```
+
+Here, we can see that the log-rank test with the proportional assumption incorrectly fails to reject the Null.
+
+```{r}
+logrank.test(increases$t, increases$event, increases$treat, 
+             rho = 0, gamma = 0 )
+```
+
+```{r} 
+s = survival::survfit(survival::Surv(t, event) ~ treat, data = increases)
+
+plot(s)
+```
+
+
+```{r}
+df <- data.frame(surv = s$surv, treat = treat_f, time = s$time)
+ggplot(data = df, aes(x = time, y = surv)) + 
+    geom_point(aes(colour = treat)) + 
+    geom_line(aes(colour = treat)) +
+    theme_bw()
+```
+
+When adjusting the log-rank test for delayed effects, we do reject the Null.
+
+```{r}
+logrank.test(increases$t, increases$event, increases$treat, 
+             rho = 0, gamma = 1 )
+```
+
+#Decreases
+
+Here, we first sample using the treatment effect. If the individual reaches time t_0, the effect diminishes. Further research can look at changing t_0.
+
+```{r}
+t_0 = 0.8
+decreases = tibble(
+  
+  treat = treat,
+  
+  u = u,
+  
+  t = 1/(lambda^(1/alpha)) * (-log(1-u)/exp(beta*treat))^(1/alpha),
+  
+  event = T
+)
+```
+
+```{r}
+decreases = decreases %>%
+  mutate(
+    t = case_when(
+      
+      t < t_0 ~ t,
+      
+      t >= t_0 ~ 1/(lambda^(1/alpha)) * (-log(1-u)/exp(beta*0))^(1/alpha)
+      
+    )
+  )
+```
+
+Here, we can see that the log-rank test with the proportional assumption incorrectly fails to reject the Null.
+
+```{r}
+logrank.test(decreases$t, decreases$event, decreases$treat, 
+             rho = 0, gamma = 0 )
+```
+
+```{r} 
+s = survival::survfit(survival::Surv(t, event) ~ treat, data = decreases)
+
+plot(s)
+```
+
+
+```{r}
+df <- data.frame(surv = s$surv, treat = treat_f, time = s$time)
+ggplot(data = df, aes(x = time, y = surv)) + 
+    geom_point(aes(colour = treat)) + 
+    geom_line(aes(colour = treat)) +
+    theme_bw()
+```
+
+When adjusting the log-rank test for diminishing effects, we do reject the Null.
+
+```{r}
+logrank.test(decreases$t, decreases$event, decreases$treat, 
+             rho = 1, gamma = 0 )
+```
+
+
