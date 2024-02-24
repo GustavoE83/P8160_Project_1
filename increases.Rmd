@@ -28,7 +28,6 @@ N = 1000
 t_0 = 1.05
 ```
 
-# Proportional
 
 ```{r}
 #11 different n values
@@ -44,7 +43,7 @@ increases = tibble(
 #Outputs "Reject", "Fail to Reject" for every row
 sim_increases = function(effect, n){
   
-  beta = if_else(effect, -0.5, 0)
+  beta = if_else(effect, beta, 0)
   
   u = runif(n)
   
@@ -124,7 +123,7 @@ results %>%
   geom_point() + 
   geom_line() + 
   labs(title = "Power of log-rank tests",
-       subtitle = "Delayed effect model",
+       subtitle = "Delayed effect model, t_0 = 1.05",
        x = "Sample size",
        y = "Power",
        color = "Test")
@@ -149,7 +148,7 @@ results %>%
   geom_point() + 
   geom_line() + 
   labs(title = "Type I Error of log-rank tests",
-       subtitle = "Delayed effect model",
+       subtitle = "Delayed effect model, t_0 = 1.05",
        x = "Sample size",
        y = "Type I Error",
        color = "Test")

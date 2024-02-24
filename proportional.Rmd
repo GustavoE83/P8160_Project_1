@@ -41,7 +41,7 @@ proportional = tibble(
 #Outputs "Reject", "Fail to Reject" for every row
 sim_proportional = function(effect, n){
   
-  beta = if_else(effect, -0.5, 0)
+  beta = if_else(effect, beta, 0)
   
   u = runif(n)
   
