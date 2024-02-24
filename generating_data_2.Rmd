@@ -19,6 +19,7 @@ Here, I assign treatment, generate from uniform distribution and define paramete
 # 0 = control; 1 = treat
 treat = c(rep(0, 500), rep(1,500))
 
+set.seed(42)
 #random U
 u = runif(1000)
 
@@ -198,3 +199,10 @@ logrank.test(decreases$t, decreases$event, decreases$treat,
 ```
 
 
+Type I Error and Power in 1000 simulations
+
+See if results change with varying sample sizes
+
+Try different t_0
+
+This project assumes no censuring or truncation
