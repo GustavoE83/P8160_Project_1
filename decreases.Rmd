@@ -1,0 +1,159 @@
+---
+title: "Type 1 and Power for different n, decreasing"
+author: "Gustavo Garcia-Franceschini"
+date: "`r Sys.Date()`"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse)
+library(nph)
+```
+
+# Fixed parameters
+
+```{r}
+#treatment effect
+beta = -0.5
+
+#coefficients
+lambda = 2
+alpha = 3
+
+#samples per n
+N = 1000
+
+#t_0 will not change right now
+t_0 = 0.8
+```
+
+# Proportional
+
+```{r}
+#11 different n values
+set.seed(42)
+decreases = tibble(
+  id = rep(1:N, 11),
+  effect = sample(c(T,F), replace = T, size = N*11),
+  n = c(rep(30, N), rep(100, N), rep(200, N), rep(300, N), rep(400, N), 
+        rep(500, N), rep(600, N), rep(700, N), rep(800, N), rep(900, N), 
+        rep(1000, N))
+)
+
+#Outputs "Reject", "Fail to Reject" for every row
+sim_decreases = function(effect, n){
+  
+  beta = if_else(effect, -0.5, 0)
+  
+  u = runif(n)
+  
+  treat = c(rep(0, n/2), rep(1,n/2))
+    
+  t = 1/(lambda^(1/alpha)) * (-log(1-u)/exp(beta*treat))^(1/alpha)
+  
+  t = case_when(
+      
+      t < t_0 ~ t,
+      
+      t >= t_0 ~ 1/(lambda^(1/alpha)) * (-log(1-u)/exp(beta*0))^(1/alpha)
+      
+    )
+  
+  event = rep(T, n)
+  
+  result = list(prop = if_else(logrank.test(t, event, treat, 
+             rho = 0, gamma = 0 )$test$p < 0.05, "Reject", "Fail to Reject"), 
+             
+             np_gamma = if_else(logrank.test(t, event, treat, 
+             rho = 0, gamma = 1 )$test$p < 0.05, "Reject", "Fail to Reject"), 
+             
+             np_rho = if_else(logrank.test(t, event, treat, 
+             rho = 1, gamma = 0 )$test$p < 0.05, "Reject", "Fail to Reject"),
+             
+             max_test = if_else(logrank.maxtest(t, event, treat)$p.Bonf < 0.05,
+                      "Reject", "Fail to Reject")
+   
+  )
+   
+   return(result)
+}
+
+decreases = decreases %>%
+  mutate(tests = map2(effect, n, sim_decreases)) %>%
+  unnest_wider(tests)
+```
+
+
+```{r}
+results = decreases %>%
+  group_by(n) %>% 
+  summarize(
+    count = n(),
+    prop_type_I_error = sum(!effect & prop == "Reject")/sum(!effect),
+    prop_power = 1 - sum(effect & prop == "Fail to Reject")/sum(effect),
+    
+    np_gamma_type_I_error = sum(!effect & np_gamma == "Reject")/sum(!effect),
+    np_gamma_power = 1 - sum(effect & np_gamma == "Fail to Reject")/sum(effect),
+    
+    np_rho_type_I_error = sum(!effect & np_rho == "Reject")/sum(!effect),
+    np_rho_power = 1 - sum(effect & np_rho == "Fail to Reject")/sum(effect),
+    
+    max_test_type_I_error = sum(!effect & max_test == "Reject")/sum(!effect),
+    max_test_power = 1 - sum(effect & max_test == "Fail to Reject")/sum(effect),
+  )
+```
+
+
+```{r}
+results %>%
+  select(contains("power"), n) %>%
+  pivot_longer(contains("power"), names_to = "test", values_to = "power") %>%
+  mutate(
+    test = case_when(
+      str_detect(test, "prop") ~ "proportional",
+      
+      str_detect(test, "gamma") ~ "increasing effect",
+      
+      str_detect(test, "rho") ~ "delayed effect",
+      
+      str_detect(test, "max") ~ "max test",
+    )
+  ) %>%
+  ggplot(aes(x = n, y= power, color = test)) +
+  geom_point() + 
+  geom_line() + 
+  labs(title = "Power of log-rank tests",
+       subtitle = "Diminishing effect model",
+       x = "Sample size",
+       y = "Power",
+       color = "Test")
+```
+
+```{r}
+results %>%
+  select(contains("error"), n) %>%
+  pivot_longer(contains("error"), names_to = "test", values_to = "type_I_error") %>%
+  mutate(
+    test = case_when(
+      str_detect(test, "prop") ~ "proportional",
+      
+      str_detect(test, "gamma") ~ "increasing effect",
+      
+      str_detect(test, "rho") ~ "delayed effect",
+      
+      str_detect(test, "max") ~ "max test",
+    )
+  ) %>%
+  ggplot(aes(x = n, y= type_I_error, color = test)) +
+  geom_point() + 
+  geom_line() + 
+  labs(title = "Type I Error of log-rank tests",
+       subtitle = "Diminishing effect model",
+       x = "Sample size",
+       y = "Type I Error",
+       color = "Test")
+```
+
+
+

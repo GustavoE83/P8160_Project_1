@@ -1,5 +1,5 @@
 ---
-title: "Another attempt at generating data"
+title: "Third attempt at generating data"
 author: "Gustavo Garcia-Franceschini"
 date: "`r Sys.Date()`"
 output: html_document
@@ -58,8 +58,6 @@ logrank.test(proportional$t, proportional$event, proportional$treat,
 
 ```{r}
 s = survival::survfit(survival::Surv(t, event) ~ treat, data = proportional)
-
-plot(s)
 ```
 
 ```{r}
@@ -118,8 +116,6 @@ logrank.test(increases$t, increases$event, increases$treat,
 
 ```{r} 
 s = survival::survfit(survival::Surv(t, event) ~ treat, data = increases)
-
-plot(s)
 ```
 
 
@@ -178,8 +174,6 @@ logrank.test(decreases$t, decreases$event, decreases$treat,
 
 ```{r} 
 s = survival::survfit(survival::Surv(t, event) ~ treat, data = decreases)
-
-plot(s)
 ```
 
 
@@ -205,4 +199,4 @@ See if results change with varying sample sizes
 
 Try different t_0
 
-This project assumes no censuring or truncation, and 50-50 treat/control split
+This project assumes no censuring or truncation
