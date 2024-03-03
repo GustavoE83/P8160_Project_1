@@ -9,6 +9,7 @@ output: html_document
 knitr::opts_chunk$set(echo = TRUE)
 library(tidyverse)
 library(nph)
+library(survminer)
 ```
 
 # Treatment Assignment
@@ -54,6 +55,14 @@ Here, we can see the log-rank test correctly rejects the Null (that the two grou
 ```{r}
 logrank.test(proportional$t, proportional$event, proportional$treat, 
              rho = 0, gamma = 0 )
+
+logrank.test(proportional$t, proportional$event, proportional$treat, 
+             rho = 0, gamma = 1 )
+
+logrank.test(proportional$t, proportional$event, proportional$treat, 
+             rho = 1, gamma = 0 )
+
+logrank.maxtest(proportional$t, proportional$event, proportional$treat)
 ```
 
 ```{r}
@@ -61,17 +70,17 @@ s = survival::survfit(survival::Surv(t, event) ~ treat, data = proportional)
 ```
 
 ```{r}
-treat_f <- as.factor(c(rep("0", 500), rep("1", 500)))
-
-df <- data.frame(surv = s$surv, treat = treat_f, time = s$time)
+ggsurvplot(s, conf.int = F, pval = FALSE, risk.table = FALSE,
+    legend.labs=c("Control", "Treatment"), 
+    legend = c(0.15, 0.15),
+    legend.title = "Treatment Group",
+    palette=c("#48ACF0", "#EA3546"), 
+    xlab = "Time",
+    ylab = "Proportion surviving",
+    title = "Proportional effect model",
+    subtitle = "Beta = -0.5, n = 1000",)
 ```
 
-```{r}
-ggplot(data = df, aes(x = time, y = surv)) + 
-    geom_point(aes(colour = treat)) + 
-    geom_line(aes(colour = treat)) +
-    theme_bw()
-```
 
 
 
@@ -112,6 +121,14 @@ Here, we can see that the log-rank test with the proportional assumption incorre
 ```{r}
 logrank.test(increases$t, increases$event, increases$treat, 
              rho = 0, gamma = 0 )
+
+logrank.test(increases$t, increases$event, increases$treat, 
+             rho = 0, gamma = 1 )
+
+logrank.test(increases$t, increases$event, increases$treat, 
+             rho = 1, gamma = 0)
+
+logrank.maxtest(increases$t, increases$event, increases$treat)
 ```
 
 ```{r} 
@@ -120,18 +137,15 @@ s = survival::survfit(survival::Surv(t, event) ~ treat, data = increases)
 
 
 ```{r}
-df <- data.frame(surv = s$surv, treat = treat_f, time = s$time)
-ggplot(data = df, aes(x = time, y = surv)) + 
-    geom_point(aes(colour = treat)) + 
-    geom_line(aes(colour = treat)) +
-    theme_bw()
-```
-
-When adjusting the log-rank test for delayed effects, we do reject the Null.
-
-```{r}
-logrank.test(increases$t, increases$event, increases$treat, 
-             rho = 0, gamma = 1 )
+ggsurvplot(s, conf.int = F, pval = FALSE, risk.table = FALSE,
+    legend.labs=c("Control", "Treatment"), 
+    legend = c(0.15, 0.15),
+    legend.title = "Treatment Group",
+    palette=c("#48ACF0", "#EA3546"), 
+    xlab = "Time",
+    ylab = "Proportion surviving",
+    title = "Increasing effect model",
+    subtitle = "Beta = -0.5, n = 1000, t_0 = 1.05")
 ```
 
 #Decreases
@@ -170,6 +184,14 @@ Here, we can see that the log-rank test with the proportional assumption incorre
 ```{r}
 logrank.test(decreases$t, decreases$event, decreases$treat, 
              rho = 0, gamma = 0 )
+
+logrank.test(decreases$t, decreases$event, decreases$treat, 
+             rho = 1, gamma = 0 )
+
+logrank.test(decreases$t, decreases$event, decreases$treat, 
+             rho = 0, gamma = 0 )
+
+logrank.maxtest(decreases$t, decreases$event, decreases$treat)
 ```
 
 ```{r} 
@@ -178,18 +200,15 @@ s = survival::survfit(survival::Surv(t, event) ~ treat, data = decreases)
 
 
 ```{r}
-df <- data.frame(surv = s$surv, treat = treat_f, time = s$time)
-ggplot(data = df, aes(x = time, y = surv)) + 
-    geom_point(aes(colour = treat)) + 
-    geom_line(aes(colour = treat)) +
-    theme_bw()
-```
-
-When adjusting the log-rank test for diminishing effects, we do reject the Null.
-
-```{r}
-logrank.test(decreases$t, decreases$event, decreases$treat, 
-             rho = 1, gamma = 0 )
+ggsurvplot(s, conf.int = F, pval = FALSE, risk.table = FALSE,
+    legend.labs=c("Control", "Treatment"), 
+    legend = c(0.15, 0.15),
+    legend.title = "Treatment Group",
+    palette=c("#48ACF0", "#EA3546"), 
+    xlab = "Time",
+    ylab = "Proportion surviving",
+    title = "Diminishing effect model",
+    subtitle = "Beta = -0.5, n = 1000, t_0 = 0.8")
 ```
 
 

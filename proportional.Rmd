@@ -27,7 +27,7 @@ N = 1000
 
 # Proportional
 
-```{r}
+```{r, cache = T}
 #11 different n values
 set.seed(42)
 proportional = tibble(
@@ -104,7 +104,7 @@ results %>%
       
       str_detect(test, "gamma") ~ "increasing effect",
       
-      str_detect(test, "rho") ~ "delayed effect",
+      str_detect(test, "rho") ~ "diminishing effect",
       
       str_detect(test, "max") ~ "max test",
     )
@@ -129,7 +129,7 @@ results %>%
       
       str_detect(test, "gamma") ~ "increasing effect",
       
-      str_detect(test, "rho") ~ "delayed effect",
+      str_detect(test, "rho") ~ "diminishing effect",
       
       str_detect(test, "max") ~ "max test",
     )

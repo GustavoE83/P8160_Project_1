@@ -1,5 +1,5 @@
 ---
-title: "Type 1 and Power for different n, decreasing"
+title: "Increasing effect, varying t_0"
 author: "Gustavo Garcia-Franceschini"
 date: "`r Sys.Date()`"
 output: html_document
@@ -24,25 +24,24 @@ alpha = 3
 #samples per n
 N = 1000
 
-#t_0 will not change right now
-t_0 = 0.8
+#n will not change right now
+n = 1000
 ```
 
-# Decreasing effect
 
 ```{r, cache = T}
 #11 different n values
 set.seed(42)
-decreases = tibble(
+increases = tibble(
   id = rep(1:N, 11),
   effect = sample(c(T,F), replace = T, size = N*11),
-  n = c(rep(30, N), rep(100, N), rep(200, N), rep(300, N), rep(400, N), 
-        rep(500, N), rep(600, N), rep(700, N), rep(800, N), rep(900, N), 
-        rep(1000, N))
+  t_0 = c(rep(0, N), rep(0.1, N), rep(0.2, N), rep(0.3, N), rep(0.4, N), 
+    rep(0.5, N), rep(0.6, N), rep(0.7, N), rep(0.8, N), rep(0.9, N), 
+        rep(1.0, N))
 )
 
 #Outputs "Reject", "Fail to Reject" for every row
-sim_decreases = function(effect, n){
+sim_increases = function(effect, t_0){
   
   beta = if_else(effect, beta, 0)
   
@@ -50,15 +49,15 @@ sim_decreases = function(effect, n){
   
   treat = c(rep(0, n/2), rep(1,n/2))
     
-  t = 1/(lambda^(1/alpha)) * (-log(1-u)/exp(beta*treat))^(1/alpha)
+  t = 1/(lambda^(1/alpha)) * (-log(1-u)/exp(beta*0))^(1/alpha) #force treat=0
   
-  t = case_when(
+   t = case_when(
       
       t < t_0 ~ t,
       
-      t >= t_0 ~ 1/(lambda^(1/alpha)) * (-log(1-u)/exp(beta*0))^(1/alpha)
+      t >= t_0 ~ 1/(lambda^(1/alpha)) * (-log(1-u)/exp(beta*treat))^(1/alpha)
       
-    )
+   )
   
   event = rep(T, n)
   
@@ -79,15 +78,15 @@ sim_decreases = function(effect, n){
    return(result)
 }
 
-decreases = decreases %>%
-  mutate(tests = map2(effect, n, sim_decreases)) %>%
+increases = increases %>%
+  mutate(tests = map2(effect, t_0, sim_increases)) %>%
   unnest_wider(tests)
 ```
 
 
 ```{r}
-results = decreases %>%
-  group_by(n) %>% 
+results = increases %>%
+  group_by(t_0) %>% 
   summarize(
     count = n(),
     prop_type_I_error = sum(!effect & prop == "Reject")/sum(!effect),
@@ -107,7 +106,7 @@ results = decreases %>%
 
 ```{r}
 results %>%
-  select(contains("power"), n) %>%
+  select(contains("power"), t_0) %>%
   pivot_longer(contains("power"), names_to = "test", values_to = "power") %>%
   mutate(
     test = case_when(
@@ -120,19 +119,19 @@ results %>%
       str_detect(test, "max") ~ "max test",
     )
   ) %>%
-  ggplot(aes(x = n, y= power, color = test)) +
+  ggplot(aes(x = t_0, y= power, color = test)) +
   geom_point() + 
   geom_line() + 
   labs(title = "Power of log-rank tests",
-       subtitle = "Diminishing effect model, t_0 = 0.8",
-       x = "Sample size",
+       subtitle = "Increasing effect model, n = 1000",
+       x = "t_0",
        y = "Power",
        color = "Test")
 ```
 
 ```{r}
 results %>%
-  select(contains("error"), n) %>%
+  select(contains("error"), t_0) %>%
   pivot_longer(contains("error"), names_to = "test", values_to = "type_I_error") %>%
   mutate(
     test = case_when(
@@ -145,12 +144,12 @@ results %>%
       str_detect(test, "max") ~ "max test",
     )
   ) %>%
-  ggplot(aes(x = n, y= type_I_error, color = test)) +
+  ggplot(aes(x = t_0, y= type_I_error, color = test)) +
   geom_point() + 
   geom_line() + 
   labs(title = "Type I Error of log-rank tests",
-       subtitle = "Diminishing effect model, t_0 = 0.8",
-       x = "Sample size",
+       subtitle = "Increasing effect model, n = 1000",
+       x = "t_0",
        y = "Type I Error",
        color = "Test")
 ```
