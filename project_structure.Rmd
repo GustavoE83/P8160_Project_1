@@ -12,6 +12,8 @@ library(nph)
 library(survminer)
 ```
 
+In this .Rmd file, I work on generating the data. This essentially defined the structure the rest of the porject would follow.
+
 # Treatment Assignment
 
 Here, I assign treatment, generate from uniform distribution and define parameters. Later parts of the project could explore different parameters.
